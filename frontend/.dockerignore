@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+.github
+.env
+.env.*
+*.log
+.vscode
+.idea
+coverage
+Dockerfile
+*.md
+tsconfig.tsbuildinfo
