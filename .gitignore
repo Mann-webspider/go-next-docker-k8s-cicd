@@ -1,0 +1,82 @@
+# ==========================================
+# Operating System & Environment
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Environment Variables & Secrets
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# ==========================================
+# Go (Backend)
+# ==========================================
+# Compiled binaries
+*.exe
+*.exe-*
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binaries
+*.test
+*.out
+coverage.txt
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Local vendor folder (if using `go mod vendor`)
+# Uncomment if you don't want to commit dependencies:
+# vendor/
+
+# ==========================================
+# Next.js / Node.js (Frontend)
+# ==========================================
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Next.js Build Output
+.next/
+out/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vercel deployment
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ==========================================
+# Docker & Local Infrastructure
+# ==========================================
+# Local database files / volumes
+postgres-data/
+*.sqlite
+*.db
