@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clicker-frontend
+  namespace: clicker-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: clicker-frontend
+  template:
+    metadata:
+      labels:
+        app: clicker-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: manndshelby/clicker-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clicker-frontend-service
+  namespace: clicker-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: clicker-frontend

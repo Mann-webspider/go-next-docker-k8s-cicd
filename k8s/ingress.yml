@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clicker-ingress
+  namespace: clicker-app
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # Routes /api/clicks and /api/clicked to Go backend
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: clicker-backend-service
+                port:
+                  number: 8080
+          # Routes all other UI traffic to Next.js
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: clicker-frontend-service
+                port:
+                  number: 3000
