@@ -1,0 +1,53 @@
+# Lean Argo CD for a local kind cluster. Login: admin / admin
+dex:
+  enabled: false
+notifications:
+  enabled: false
+applicationSet:
+  replicas: 0 # only one Application here; saves ~60Mi
+configs:
+  params:
+    server.insecure: true # TLS terminates at ingress-nginx
+  secret:
+    # bcrypt("admin")
+    argocdServerAdminPassword: "$2y$10$EzrgXwhZ6OM7kE6tJkAs1uVMuT6g7fqAKM3Pk0lMifngXmoGrrLvy"
+  cm:
+    timeout.reconciliation: 60s # poll git every minute instead of 3
+redis:
+  resources:
+    requests: { cpu: 10m, memory: 16Mi }
+    limits: { memory: 64Mi }
+controller:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 384Mi }
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+server:
+  # slow laptop: default 10s/1s liveness kills it mid-boot
+  livenessProbe: { initialDelaySeconds: 120, timeoutSeconds: 5, failureThreshold: 5 }
+  readinessProbe: { timeoutSeconds: 5 }
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { memory: 192Mi }
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.localhost
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+repoServer:
+  # slow laptop: default 10s/1s liveness kills it mid-boot
+  livenessProbe: { initialDelaySeconds: 120, timeoutSeconds: 5, failureThreshold: 5 }
+  readinessProbe: { timeoutSeconds: 5 }
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { memory: 256Mi }
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true

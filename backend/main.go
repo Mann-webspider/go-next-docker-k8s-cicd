@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"time"
+	_ "time/tzdata" // runtime image ships no zoneinfo; DSN needs Asia/Kolkata
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -25,6 +27,7 @@ func main() {
 	// Middlewares
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
+	e.Use(metricsMiddleware)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"}, // Adjust for production Next.js domain
 		AllowMethods: []string{http.MethodGet, http.MethodPost},
@@ -42,7 +45,16 @@ func main() {
 		host, user, password, dbName, port,
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Retry for a while so the pod does not crash-loop while Postgres is still starting
+	var db *gorm.DB
+	var err error
+	for i := 0; i < 10; i++ {
+		if db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{}); err == nil {
+			break
+		}
+		log.Printf("PostgreSQL not ready (attempt %d): %v", i+1, err)
+		time.Sleep(3 * time.Second)
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
@@ -61,7 +73,12 @@ func main() {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
+	podName, _ := os.Hostname()
+
 	// --- Routes ---
+
+	// Prometheus scrape endpoint
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	// Kubernetes Liveness/Readiness Probe Endpoint
 	e.GET("/health", func(c *echo.Context) error {
@@ -77,6 +94,7 @@ func main() {
 		db.FirstOrCreate(&button, Button{ID: 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"count": button.ClickedCount,
+			"pod":   podName,
 		})
 	})
 
@@ -86,16 +104,18 @@ func main() {
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to record click"})
 		}
+		clicksTotal.Inc()
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"message": "Button clicked!",
 			"count":   count,
+			"pod":     podName,
 		})
 	})
 
 	// Start Server
 	serverPort := getEnvOrDefault("PORT", "8080")
 	if err := e.Start(":" + serverPort); err != nil {
-		e.Logger.Error("Shutting down the server: ", err)
+		e.Logger.Error("Shutting down the server", "err", err)
 	}
 }
 

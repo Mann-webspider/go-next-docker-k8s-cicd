@@ -1,0 +1,96 @@
+# Ops canvas: a static page served by nginx. nginx also proxies Prometheus and the
+# backend under /api/* so the browser talks to one origin (no CORS, no exposed creds).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clicker-dashboard
+data:
+  index.html: |
+{{ .Files.Get "files/dashboard.html" | indent 4 }}
+  config.js: |
+    window.CFG = {
+      repo: {{ .Values.dashboard.githubRepo | quote }},
+      links: {
+        app: "http://localhost",
+        argocd: "http://argocd.localhost",
+        grafana: "http://grafana.localhost",
+        prometheus: "http://prometheus.localhost"
+      }
+    };
+  default.conf: |
+    server {
+      listen 80;
+      resolver kube-dns.kube-system.svc.cluster.local valid=10s ipv6=off;
+      root /usr/share/nginx/html;
+
+      location / {
+        add_header Cache-Control no-store;
+        try_files $uri /index.html;
+      }
+      location /api/prom/ {
+        set $up {{ .Values.dashboard.prometheus }};
+        rewrite ^/api/prom/(.*)$ /$1 break;
+        proxy_pass http://$up;
+      }
+      location /api/app/ {
+        set $up clicker-backend-service.{{ .Release.Namespace }}.svc.cluster.local:8080;
+        rewrite ^/api/app/(.*)$ /$1 break;
+        proxy_pass http://$up;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clicker-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clicker-dashboard
+  template:
+    metadata:
+      labels:
+        app: clicker-dashboard
+      annotations:
+        checksum/files: {{ .Files.Get "files/dashboard.html" | sha256sum }}
+        checksum/values: {{ toJson .Values.dashboard | sha256sum }}
+    spec:
+      containers:
+        - name: nginx
+          image: {{ .Values.dashboard.image }}
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }
+          volumeMounts:
+            - name: site
+              mountPath: /usr/share/nginx/html
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: site
+          configMap:
+            name: clicker-dashboard
+            items:
+              - { key: index.html, path: index.html }
+              - { key: config.js, path: config.js }
+        - name: conf
+          configMap:
+            name: clicker-dashboard
+            items:
+              - { key: default.conf, path: default.conf }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clicker-dashboard
+spec:
+  selector:
+    app: clicker-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

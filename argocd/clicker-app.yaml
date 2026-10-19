@@ -1,0 +1,22 @@
+# Argo CD watches charts/clicker on main and keeps the cluster equal to git.
+# CI commits new image tags into charts/clicker/values.yaml; Argo CD rolls them out.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: clicker
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Mann-webspider/go-next-docker-k8s-cicd.git
+    targetRevision: main
+    path: charts/clicker
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: clicker-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

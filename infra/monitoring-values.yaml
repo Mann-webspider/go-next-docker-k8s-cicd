@@ -1,0 +1,54 @@
+# kube-prometheus-stack trimmed to fit a ~3.5GB Docker Desktop VM.
+# Grafana login: admin / admin
+alertmanager:
+  enabled: false
+
+# kind binds these to 127.0.0.1 inside the node, so scraping them only produces red targets
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+# apiserver metrics are the largest target and nothing here reads them; on a 4GB laptop they starve the node
+kubeApiServer:
+  enabled: false
+
+prometheus-node-exporter:
+  hostRootFsMount:
+    enabled: false # Docker Desktop root mount is not shared
+
+prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts: [prometheus.localhost]
+  prometheusSpec:
+    retention: 1d
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    # pick up every ServiceMonitor/PodMonitor in the cluster, not only ones labelled for this release
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: 500m, memory: 600Mi } # CPU cap keeps it from starving the API server
+
+grafana:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 300m, memory: 384Mi }
+  adminUser: admin
+  adminPassword: admin
+  # first boot runs DB migrations; on a small VM that outlives the default 60s liveness delay
+  livenessProbe:
+    httpGet: { path: /api/health, port: grafana }
+    initialDelaySeconds: 300
+    timeoutSeconds: 30
+    failureThreshold: 10
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts: [grafana.localhost]

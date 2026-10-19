@@ -16,6 +16,8 @@ export default function Home() {
   const [clickCount, setClickCount] = useState<number>(0);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Which backend pod answered
+  const [servedBy, setServedBy] = useState<string>("");
 
   // 1. Fetch initial click count from Backend (GET /clicks)
   const fetchCount = useCallback(async () => {
@@ -24,6 +26,7 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         setClickCount(data.count ?? 0);
+        setServedBy(data.pod ?? "");
       }
     } catch (err) {
       console.error("Failed to fetch click count:", err);
@@ -52,6 +55,7 @@ export default function Home() {
         const data = await res.json();
         // Update count from backend response
         setClickCount(data.count);
+        setServedBy(data.pod ?? "");
       }
     } catch (err) {
       console.error("Failed to register click:", err);
@@ -93,6 +97,11 @@ export default function Home() {
           >
             {isLoading ? "..." : clickCount.toLocaleString()}
           </motion.h1>
+          {servedBy && (
+            <span className="mt-2 text-xs font-mono text-zinc-400 dark:text-zinc-500">
+              served by {servedBy}
+            </span>
+          )}
         </div>
 
         {/* Playful SaaS Button Wrapper */}

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone", // self-contained server.js for the slim runtime image
 };
 
 export default nextConfig;

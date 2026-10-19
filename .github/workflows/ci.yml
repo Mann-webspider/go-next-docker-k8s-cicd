@@ -3,7 +3,16 @@ name: CI
 on:
   push:
     branches: [main]
+    # chart/infra-only changes need no new image: Argo CD syncs them straight from git
+    paths-ignore: ["charts/**", "infra/**", "argocd/**", "**.md"]
   workflow_dispatch:
+
+permissions:
+  contents: write # lets the job commit the new image tag back to the repo
+
+concurrency:
+  group: ci-main
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -56,4 +65,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_URL=/api
+
+      # GitOps hand-off: write the new tag into the Helm values and push.
+      # Argo CD sees the commit and rolls the Deployments; no kubectl access needed in CI.
+      - name: Bump image tags in Helm values
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          yq -i '.backend.image.tag = strenv(TAG) | .frontend.image.tag = strenv(TAG)' charts/clicker/values.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(deploy): images ${TAG} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
