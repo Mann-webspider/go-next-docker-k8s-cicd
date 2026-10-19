@@ -3,17 +3,14 @@
 backend:
   image:
     repository: manndshelby/clicker-backend
-    tag: latest
+    tag: 1e891c64828f
   replicas: 1 # small laptop; bump to 2+ to watch load-balancing on the canvas
-
 frontend:
   image:
     repository: manndshelby/clicker-frontend
-    tag: latest
+    tag: 1e891c64828f
   replicas: 1
-
 imagePullPolicy: IfNotPresent
-
 postgres:
   image: postgres:16-alpine
   database: events_db
@@ -22,13 +19,11 @@ postgres:
   # Demo-only value; use a SealedSecret/ExternalSecret for anything real.
   password: SuperSecurePassword123
   storage: 2Gi
-
 dashboard:
   image: nginx:1.29-alpine
   host: dashboard.localhost
   githubRepo: Mann-webspider/go-next-docker-k8s-cicd # commits + Actions runs shown on the canvas
   # In-cluster addresses the dashboard proxies to (avoids CORS in the browser)
   prometheus: prometheus-operated.monitoring.svc.cluster.local:9090
-
 ingress:
   className: nginx
