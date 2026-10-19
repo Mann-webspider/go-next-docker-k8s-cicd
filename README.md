@@ -90,32 +90,56 @@ A high-concurrency event telemetry system designed to showcase production-grade 
 | Orchestration|Kubernetes, Nginx Ingress Controller |
 
 
-## Local Development Setup1. Run using Docker Compose
+## GitOps, Observability & the Ops Canvas
 
-```Bash
-# Clone the repository
-git clone https://github.com/manndalsania/k8s-devops-pipeline.git
-cd k8s-devops-pipeline
-
-# Spin up PostgreSQL, Go Backend, and Next.js Frontend
-docker-compose up --build -d
-
+```text
+ git push ──► GitHub Actions ──► Docker Hub (image:<sha>)
+                    │
+                    └─► commits tag into charts/clicker/values.yaml
+                                   │
+                         Argo CD (polls main every 60s)
+                                   │  helm template + sync
+                                   ▼
+   ┌──────────────────── kind cluster ─────────────────────┐
+   │ clicker-app: frontend · backend · postgres         │
+   │              ops canvas (dashboard.localhost)           │
+   │ monitoring : Prometheus · Grafana · kube-state-metrics  │
+   │ argocd     : Argo CD                                    │
+   └────────────────────────────────────────────────────────┘
 ```
-2. Deploy to Kubernetes Cluster (Minikube / EKS)Bash
+
+| Piece | Where |
+|---|---|
+| App Helm chart (frontend, backend, Postgres, dashboard, ingress, ServiceMonitor) | `charts/clicker/` |
+| Argo CD Application (auto-sync, prune, self-heal) | `argocd/clicker-app.yaml` |
+| Platform Helm values + installer | `infra/` |
+| Backend metrics (`/metrics`): request rate/latency, clicks | `backend/metrics.go` |
+
+### Ops Canvas (dashboard.localhost)
+A Figma-style infinite canvas with a dotted grid. Every component of the system is a live card:
+commits and Actions runs from GitHub, Argo CD sync/health and deployed image tags, every pod
+(ready state, CPU, memory, restarts, req/s), p95 latency sparklines, Prometheus
+target health. Edges animate when traffic actually flows. Pan by dragging,
+zoom with the wheel, drag cards by their header (layout is remembered), press `F` to fit.
+A "Traffic generator" card fires real requests through the stack so you can watch it light up.
+
+## Run it locally
+
+Prerequisites: Docker Desktop, `kind`, `kubectl`, `helm`.
+
+```bash
+kind create cluster --name clicker-cluster --config kind-config.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+bash infra/install.sh   # monitoring, Argo CD, then hands the app to Argo CD
 ```
-# Apply ConfigMaps, Secrets, and Persistent Volumes
-kubectl apply -f k8s/config/
 
-# Deploy Services & Deployments
-kubectl apply -f k8s/backend/
-kubectl apply -f k8s/frontend/
+| UI | URL | Login |
+|---|---|---|
+| App | http://localhost | — |
+| Ops canvas | http://dashboard.localhost | — |
+| Argo CD | http://argocd.localhost | admin / admin |
+| Grafana | http://grafana.localhost | admin / admin |
+| Prometheus | http://prometheus.localhost | — |
 
-# Apply Ingress Controller
-kubectl apply -f k8s/ingress.yaml
-```
----
-
-### Why this README will make a great recruiter impression:
-1. **Badges at the top:** Instantly signals your tech stack visually.
-2. **ASCII Flowcharts:** Easy for hiring managers to scan in under 10 seconds.
-3. **Quantifiable Metrics:** Emphasizing image sizes (**~1GB to 170MB** for Next.js, **~29MB** for Go) proves real-world Docker optimization skills.
+`*.localhost` resolves to 127.0.0.1 in Chrome/Edge/Firefox without touching the hosts file.
+Default credentials are for a local demo only.
