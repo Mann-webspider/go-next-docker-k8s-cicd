@@ -1,0 +1,10 @@
+# Picked up by the Grafana sidecar from kube-prometheus-stack (watches every namespace for this label)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clicker-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  clicker-overview.json: |-
+{{ .Files.Get "files/grafana-dashboard.json" | indent 4 }}
