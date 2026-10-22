@@ -39,7 +39,7 @@ prometheus:
 grafana:
   resources:
     requests: { cpu: 50m, memory: 128Mi }
-    limits: { cpu: 300m, memory: 384Mi }
+    limits: { cpu: "1", memory: 512Mi } # Grafana 13: plugin loads time out below ~1 core, OOMs at 384Mi
   adminUser: admin
   adminPassword: admin
   # first boot runs DB migrations; on a small VM that outlives the default 60s liveness delay
