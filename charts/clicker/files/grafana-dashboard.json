@@ -34,8 +34,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "argocd_app_info{name=\"clicker\"}",
-          "legendFormat": "{{sync_status}} \u00b7 {{health_status}}"
+          "expr": "max by (sync_status, health_status) (argocd_app_info{name=\"clicker\"})",
+          "legendFormat": "{{sync_status}} \u00b7 {{health_status}}",
+          "instant": true
         }
       ],
       "fieldConfig": {
