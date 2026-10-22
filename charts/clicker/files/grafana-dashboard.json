@@ -198,7 +198,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(http_requests_total{namespace=\"clicker-app\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"clicker-app\"}[5m])), 1e-9)",
+          "expr": "(sum(rate(http_requests_total{namespace=\"clicker-app\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"clicker-app\"}[5m])), 1e-9)) or vector(0)",
           "legendFormat": ""
         }
       ],
