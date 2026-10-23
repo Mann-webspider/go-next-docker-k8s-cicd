@@ -3,12 +3,12 @@
 backend:
   image:
     repository: manndshelby/clicker-backend
-    tag: 1e891c64828f
+    tag: fa112ce04561
   replicas: 1 # small laptop; bump to 2+ to watch load-balancing on the canvas
 frontend:
   image:
     repository: manndshelby/clicker-frontend
-    tag: 1e891c64828f
+    tag: fa112ce04561
   replicas: 1
 imagePullPolicy: IfNotPresent
 postgres:
