@@ -129,7 +129,7 @@ export default function Home() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.92 }}
             onClick={handleClick}
-            className="relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-150 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-500 active:shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800"
+            className="relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-150 bg-red-600 rounded-2xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-500 active:shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800"
           >
             <span className="flex items-center space-x-2">
               <span>Push Event</span>
